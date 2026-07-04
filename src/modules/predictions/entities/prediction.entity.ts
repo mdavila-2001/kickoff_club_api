@@ -31,15 +31,15 @@ export class PredictionEntity {
   @IsUUID()
   matchId: string;
 
-  @Column({ name: 'predicted_home', type: 'int' })
+  @Column({ name: 'predicted_home', type: 'integer' })
   @IsInt()
   predictedHome: number;
 
-  @Column({ name: 'predicted_away', type: 'int' })
+  @Column({ name: 'predicted_away', type: 'integer' })
   @IsInt()
   predictedAway: number;
 
-  @Column({ name: 'points_earned', type: 'int', nullable: true })
+  @Column({ name: 'points_earned', type: 'integer', nullable: true })
   @IsOptional()
   @IsInt()
   pointsEarned: number | null;

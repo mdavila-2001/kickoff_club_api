@@ -27,7 +27,7 @@ export class GroupParticipantEntity {
   @IsUUID()
   userId: string;
 
-  @Column({ name: 'accumulated_points', type: 'int', default: 0 })
+  @Column({ name: 'accumulated_points', type: 'integer', default: 0 })
   @IsInt()
   @Min(0)
   accumulatedPoints: number;
@@ -43,7 +43,7 @@ export class GroupParticipantEntity {
   group: GroupEntity;
 
   // fk_participants_user ... ON DELETE CASCADE
-  @ManyToOne(() => UserEntity, (user) => user.participations, {
+  @ManyToOne(() => UserEntity, (user) => user.groupParticipations, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })

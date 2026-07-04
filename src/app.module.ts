@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { PredictionsModule } from './modules/predictions/predictions.module';
 import { MatchesModule } from './modules/matches/matches.module';
 import { GroupsModule } from './modules/groups/groups.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { GroupsModule } from './modules/groups/groups.module';
     GroupsModule,
     MatchesModule,
     PredictionsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

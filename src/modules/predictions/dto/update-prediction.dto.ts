@@ -1,4 +1,13 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreatePredictionDto } from './create-prediction.dto';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
-export class UpdatePredictionDto extends PartialType(CreatePredictionDto) {}
+export class UpdatePredictionDto {
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  predictedHome?: number;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  predictedAway?: number;
+}

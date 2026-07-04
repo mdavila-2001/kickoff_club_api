@@ -73,7 +73,7 @@ export class UserEntity {
     () => GroupParticipantEntity,
     (participation) => participation.user,
   )
-  participations: GroupParticipantEntity[];
+  groupParticipations: GroupParticipantEntity[];
 
   // Pronósticos emitidos por este usuario (inverso de PredictionEntity.user).
   @OneToMany(() => PredictionEntity, (prediction) => prediction.user)

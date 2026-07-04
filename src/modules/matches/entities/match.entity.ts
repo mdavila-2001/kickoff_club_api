@@ -59,12 +59,12 @@ export class MatchEntity {
   @IsEnum(MatchStatus)
   status: MatchStatus;
 
-  @Column({ name: 'home_score', type: 'int', nullable: true })
+  @Column({ name: 'home_score', type: 'integer', nullable: true })
   @IsOptional()
   @IsInt()
   homeScore: number | null;
 
-  @Column({ name: 'away_score', type: 'int', nullable: true })
+  @Column({ name: 'away_score', type: 'integer', nullable: true })
   @IsOptional()
   @IsInt()
   awayScore: number | null;
