@@ -63,6 +63,7 @@ export class AuthService {
 
     const payload: JwtPayload = {
       sub: user.id,
+      id: user.id,
       email: user.email,
       role: user.role,
     };
@@ -74,10 +75,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Proyección explícita campo por campo: passwordHash queda
-   * estructuralmente excluido de toda respuesta de la API.
-   */
   private toProfile(user: UserEntity): AuthUserProfile {
     return {
       id: user.id,

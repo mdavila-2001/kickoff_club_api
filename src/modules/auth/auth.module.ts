@@ -19,7 +19,10 @@ import { RolesGuard } from './guards/roles.guard';
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => ({
         secret: configService.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            '1d') as unknown as number,
+        },
       }),
     }),
   ],
