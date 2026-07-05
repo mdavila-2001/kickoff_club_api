@@ -1,6 +1,6 @@
 import { ExternalMatchDto } from '../dto/external-match.dto';
 
-export interface ISportsProvider {
-  fetchLiveMatches(): Promise<ExternalMatchDto[]>;
-  fetchMatchesByDate(date: string): Promise<ExternalMatchDto[]>;
+export abstract class ISportsProvider {
+  abstract fetchLiveMatches(): Promise<ExternalMatchDto[]>;
+  abstract fetchMatchesByDate(date: string): Promise<ExternalMatchDto[]>;
 }
