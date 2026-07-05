@@ -1,27 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
+
 import { PredictionsService } from './predictions.service';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
-import { UpdatePredictionDto } from './dto/update-prediction.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 
+@UseGuards(JwtAuthGuard)
 @Controller('predictions')
 export class PredictionsController {
   constructor(private readonly predictionsService: PredictionsService) {}
 
   @Post()
-  create(@Body() createPredictionDto: CreatePredictionDto) {
-    return this.predictionsService.create(createPredictionDto);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updatePredictionDto: UpdatePredictionDto,
+  create(
+    @Body() createPredictionDto: CreatePredictionDto,
+    @Req() req: Request & { user: AuthenticatedUser },
   ) {
-    return this.predictionsService.update(id, updatePredictionDto);
+    return this.predictionsService.createOrUpdatePrediction(
+      req.user.id,
+      createPredictionDto,
+    );
   }
 
-  @Get()
-  findAll() {
-    return this.predictionsService.findAll();
+  @Get('me')
+  findMyPredictions(@Req() req: Request & { user: AuthenticatedUser }) {
+    return this.predictionsService.findUserPredictions(req.user.id);
   }
 }

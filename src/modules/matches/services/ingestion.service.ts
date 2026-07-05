@@ -81,6 +81,13 @@ export class IngestionService {
     const status = this.calculateMatchStatus(matchDto.dateTime);
 
     if (existing) {
+      if (existing.status === MatchStatus.FINISHED) {
+        this.logger.warn(
+          `Partido ${existing.id} (ext: ${matchDto.externalApiId}) ya está FINISHED — omitiendo mutación`,
+        );
+        return;
+      }
+
       existing.homeScore = matchDto.homeScore;
       existing.awayScore = matchDto.awayScore;
       existing.status = status;

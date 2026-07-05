@@ -10,6 +10,7 @@ import { MatchesModule } from './modules/matches/matches.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SportsClientModule } from './modules/sports-client/sports-client.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SportsClientModule } from './modules/sports-client/sports-client.module
     PredictionsModule,
     AuthModule,
     SportsClientModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
