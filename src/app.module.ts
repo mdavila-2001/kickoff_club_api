@@ -8,6 +8,7 @@ import { PredictionsModule } from './modules/predictions/predictions.module';
 import { MatchesModule } from './modules/matches/matches.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SportsClientModule } from './modules/sports-client/sports-client.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from './modules/auth/auth.module';
     MatchesModule,
     PredictionsModule,
     AuthModule,
+    SportsClientModule,
   ],
   controllers: [AppController],
   providers: [AppService],
