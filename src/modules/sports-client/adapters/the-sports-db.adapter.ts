@@ -18,6 +18,8 @@ interface TheSportsDbEvent {
   strLeague?: string;
   strVenue?: string;
   strCity?: string;
+  strHomeTeamBadge?: string;
+  strAwayTeamBadge?: string;
 }
 
 interface TheSportsDbResponse {
@@ -45,7 +47,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
     this.apiKey =
       this.configService.get<string>('THE_SPORTS_DB_API_KEY') ||
       this.configService.get<string>('SPORTS_API_KEY') ||
-      '1';
+      '123';
 
     this.isV2 = this.baseUrl.includes('/v2');
   }
@@ -96,8 +98,26 @@ export class TheSportsDbAdapter implements ISportsProvider {
       const response = await firstValueFrom(
         this.httpService.get<TheSportsDbResponse>(url, { headers }),
       );
+
+      const responseData = response.data as Record<string, unknown>;
+      if (
+        typeof responseData.Message === 'string' &&
+        responseData.Message.includes('Premium')
+      ) {
+        throw new BadGatewayException(
+          'Este endpoint requiere una cuenta Premium de TheSportsDB',
+        );
+      }
+
       return this.mapResponse(response.data);
     } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 400) {
+        throw new BadGatewayException(
+          'La API devolvió un error 400 (posible restricción Premium o parámetro inválido)',
+        );
+      }
+
       const errorMessage = error instanceof Error ? error.stack : String(error);
       this.logger.error(
         `Failed to fetch matches for date ${date} from TheSportsDB`,
@@ -108,6 +128,138 @@ export class TheSportsDbAdapter implements ISportsProvider {
       );
     }
   }
+
+  async fetchMatchesByDay(
+    date: string,
+    leagueId?: string,
+  ): Promise<ExternalMatchDto[]> {
+    let url = `${this.baseUrl}/${this.apiKey}/eventsday.php?d=${date}`;
+    if (leagueId) {
+      url += `&l=${leagueId}`;
+    } else {
+      url += `&s=Soccer`;
+    }
+
+    this.logger.debug(`Fetching day matches: ${url}`);
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<TheSportsDbResponse>(url),
+      );
+
+      if (!response.data?.events) {
+        return [];
+      }
+
+      return this.mapResponse(response.data);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(
+        `Error trayendo partidos del día: ${errorMessage}`,
+        errorStack,
+      );
+      throw new BadGatewayException(
+        'Error al comunicarse con el proveedor externo de deportes',
+      );
+    }
+  }
+
+  async fetchMatchesBySeason(
+    leagueId: string,
+    season: string,
+  ): Promise<ExternalMatchDto[]> {
+    try {
+      let url: string;
+      const headers: Record<string, string> = {};
+
+      if (this.isV2) {
+        url = `${this.baseUrl}/eventsseason.php?id=${leagueId}&s=${season}`;
+        headers['X-API-KEY'] = this.apiKey;
+      } else {
+        url = `${this.baseUrl}/${this.apiKey}/eventsseason.php?id=${leagueId}&s=${season}`;
+      }
+
+      this.logger.log(
+        `Fetching matches for league ${leagueId} season ${season} from: ${url}`,
+      );
+      const response = await firstValueFrom(
+        this.httpService.get<TheSportsDbResponse>(url, { headers }),
+      );
+
+      const responseData = response.data as Record<string, unknown>;
+      if (
+        responseData &&
+        typeof responseData.Message === 'string' &&
+        responseData.Message.includes('Premium')
+      ) {
+        throw new BadGatewayException(
+          'Este endpoint requiere una cuenta Premium de TheSportsDB',
+        );
+      }
+
+      return this.mapResponse(response.data);
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 400) {
+        throw new BadGatewayException(
+          'La API devolvió un error 400 (posible restricción Premium o parámetro inválido)',
+        );
+      }
+
+      const errorMessage = error instanceof Error ? error.stack : String(error);
+      this.logger.error(
+        `Failed to fetch matches for league ${leagueId} season ${season} from TheSportsDB`,
+        errorMessage,
+      );
+      throw new BadGatewayException(
+        'Error al comunicarse con el proveedor externo de deportes',
+      );
+    }
+  }
+
+  async fetchMatchesByRound(
+    leagueId: string,
+    round: string,
+    season: string,
+  ): Promise<ExternalMatchDto[]> {
+    let url: string;
+    const headers: Record<string, string> = {};
+
+    if (this.isV2) {
+      url = `${this.baseUrl}/eventsround.php?id=${leagueId}&r=${round}&s=${season}`;
+      headers['X-API-KEY'] = this.apiKey;
+    } else {
+      url = `${this.baseUrl}/${this.apiKey}/eventsround.php?id=${leagueId}&r=${round}&s=${season}`;
+    }
+
+    this.logger.debug(`Fetching round matches: ${url}`);
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<TheSportsDbResponse>(url, { headers }),
+      );
+
+      if (!response.data?.events) {
+        return [];
+      }
+
+      return this.mapResponse(response.data);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(
+        `Error fetching round matches: ${errorMessage}`,
+        errorStack,
+      );
+      throw new BadGatewayException(
+        'Error al comunicarse con el proveedor externo de deportes',
+      );
+    }
+  }
+
 
   private mapResponse(data: TheSportsDbResponse): ExternalMatchDto[] {
     const rawEvents = data.events || data.livescore;
@@ -150,12 +302,16 @@ export class TheSportsDbAdapter implements ISportsProvider {
       dto.externalApiId = externalApiId;
       dto.homeTeam = homeTeam;
       dto.awayTeam = awayTeam;
-      dto.homeScore = isNaN(homeScore as number) ? null : homeScore;
-      dto.awayScore = isNaN(awayScore as number) ? null : awayScore;
-      dto.dateTime = isNaN(dateTime.getTime()) ? new Date() : dateTime;
+      dto.homeScore =
+        homeScore !== null && Number.isNaN(homeScore) ? null : homeScore;
+      dto.awayScore =
+        awayScore !== null && Number.isNaN(awayScore) ? null : awayScore;
+      dto.dateTime = Number.isNaN(dateTime.getTime()) ? new Date() : dateTime;
       dto.phase = phase;
       dto.stadium = stadium;
       dto.city = city;
+      dto.homeTeamBadge = event.strHomeTeamBadge || null;
+      dto.awayTeamBadge = event.strAwayTeamBadge || null;
 
       return dto;
     });

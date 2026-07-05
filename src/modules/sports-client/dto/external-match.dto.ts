@@ -42,4 +42,12 @@ export class ExternalMatchDto {
 
   @IsString()
   city: string;
+
+  @IsOptional()
+  @IsString()
+  homeTeamBadge: string | null;
+
+  @IsOptional()
+  @IsString()
+  awayTeamBadge: string | null;
 }

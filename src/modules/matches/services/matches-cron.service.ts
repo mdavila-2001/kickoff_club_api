@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { IngestionService } from './ingestion.service';
 
 @Injectable()
@@ -13,7 +13,7 @@ export class MatchesCronService {
    * Sincronización automática de partidos desde el proveedor externo.
    * Se ejecuta cada 30 minutos y previene el solapamiento bajo carga.
    */
-  @Cron('*/20 * * * *')
+  @Cron(CronExpression.EVERY_30_MINUTES)
   public async handleMatchesSync(): Promise<void> {
     if (this.isSyncing) {
       this.logger.warn('Sincronización previa aún en proceso, omitiendo pulso');

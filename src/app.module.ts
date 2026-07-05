@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
+import { SeederModule } from './database/seeders/seeder.module';
 import { UsersModule } from './modules/users/users.module';
 import { PredictionsModule } from './modules/predictions/predictions.module';
 import { MatchesModule } from './modules/matches/matches.module';
@@ -17,6 +18,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     DatabaseModule,
+    SeederModule,
     UsersModule,
     GroupsModule,
     MatchesModule,

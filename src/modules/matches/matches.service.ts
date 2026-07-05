@@ -63,7 +63,9 @@ export class MatchesService {
   async updateMatch(id: string, dto: UpdateMatchDto): Promise<MatchEntity> {
     const match = await this.findById(id);
 
-    const updates: Partial<Pick<MatchEntity, 'dateTime' | 'phase' | 'stadium' | 'city'>> = {};
+    const updates: Partial<
+      Pick<MatchEntity, 'dateTime' | 'phase' | 'stadium' | 'city'>
+    > = {};
 
     if (dto.dateTime !== undefined) {
       updates.dateTime = new Date(dto.dateTime);
