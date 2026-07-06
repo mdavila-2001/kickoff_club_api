@@ -21,6 +21,7 @@ interface TheSportsDbEvent {
   strHomeTeamBadge?: string;
   strAwayTeamBadge?: string;
   intRound?: string;
+  idVenue?: string;
 }
 
 interface TheSportsDbResponse {
@@ -34,6 +35,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly isV2: boolean;
+  private readonly venueCache = new Map<string, string | null>();
 
   constructor(
     private readonly httpService: HttpService,
@@ -63,7 +65,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
         const response = await firstValueFrom(
           this.httpService.get<TheSportsDbResponse>(url, { headers }),
         );
-        return this.mapResponse(response.data);
+        return await this.mapResponse(response.data);
       } else {
         const today = new Date().toISOString().split('T')[0];
         this.logger.log(
@@ -110,7 +112,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
         );
       }
 
-      return this.mapResponse(response.data);
+      return await this.mapResponse(response.data);
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number } };
       if (axiosError?.response?.status === 400) {
@@ -152,7 +154,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
         return [];
       }
 
-      return this.mapResponse(response.data);
+      return await this.mapResponse(response.data);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -200,7 +202,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
         );
       }
 
-      return this.mapResponse(response.data);
+      return await this.mapResponse(response.data);
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number } };
       if (axiosError?.response?.status === 400) {
@@ -246,7 +248,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
         return [];
       }
 
-      return this.mapResponse(response.data);
+      return await this.mapResponse(response.data);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -261,16 +263,24 @@ export class TheSportsDbAdapter implements ISportsProvider {
     }
   }
 
-  private mapResponse(data: TheSportsDbResponse): ExternalMatchDto[] {
+  private async mapResponse(
+    data: TheSportsDbResponse,
+  ): Promise<ExternalMatchDto[]> {
     const rawEvents = data.events || data.livescore;
     if (!rawEvents || !Array.isArray(rawEvents)) {
       return [];
     }
 
-    return rawEvents.map((event) => this.mapSingleEvent(event));
+    const dtos: ExternalMatchDto[] = [];
+    for (const event of rawEvents) {
+      dtos.push(await this.mapSingleEvent(event));
+    }
+    return dtos;
   }
 
-  private mapSingleEvent(event: TheSportsDbEvent): ExternalMatchDto {
+  private async mapSingleEvent(
+    event: TheSportsDbEvent,
+  ): Promise<ExternalMatchDto> {
     const externalApiId = event.idEvent;
     const homeTeam = event.strHomeTeam || 'Unknown Home Team';
     const awayTeam = event.strAwayTeam || 'Unknown Away Team';
@@ -303,6 +313,11 @@ export class TheSportsDbAdapter implements ISportsProvider {
     const stadium = event.strVenue || 'Unknown Venue';
     const city = event.strCity || 'Unknown City';
 
+    // Obtener imagen del estadio usando el ID de Venue con caché
+    const stadiumImage = event.idVenue
+      ? await this.fetchVenueImage(event.idVenue)
+      : null;
+
     const dto = new ExternalMatchDto();
     dto.externalApiId = externalApiId;
     dto.homeTeam = homeTeam;
@@ -315,10 +330,48 @@ export class TheSportsDbAdapter implements ISportsProvider {
     dto.phase = phase;
     dto.stadium = stadium;
     dto.city = city;
+    dto.stadiumImage = stadiumImage;
     dto.homeTeamBadge = event.strHomeTeamBadge || null;
     dto.awayTeamBadge = event.strAwayTeamBadge || null;
 
     return dto;
+  }
+
+  private async fetchVenueImage(venueId: string): Promise<string | null> {
+    const cached = this.venueCache.get(venueId);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    try {
+      let url: string;
+      const headers: Record<string, string> = {};
+
+      if (this.isV2) {
+        url = `${this.baseUrl}/lookupvenue.php?id=${venueId}`;
+        headers['X-API-KEY'] = this.apiKey;
+      } else {
+        url = `${this.baseUrl}/${this.apiKey}/lookupvenue.php?id=${venueId}`;
+      }
+
+      this.logger.debug(
+        `Fetching stadium details for venue ID ${venueId} from: ${url}`,
+      );
+      const response = await firstValueFrom(
+        this.httpService.get<{ venues?: { strThumb?: string }[] | null }>(url, {
+          headers,
+        }),
+      );
+
+      const thumb = response.data?.venues?.[0]?.strThumb || null;
+      this.venueCache.set(venueId, thumb);
+      return thumb;
+    } catch (error) {
+      this.logger.warn(`Failed to fetch stadium image for venue ID ${venueId}`);
+      this.venueCache.set(venueId, null);
+      console.error(error);
+      return null;
+    }
   }
 
   private determinePhase(league?: string, roundRaw?: string): string {

@@ -50,4 +50,8 @@ export class ExternalMatchDto {
   @IsOptional()
   @IsString()
   awayTeamBadge: string | null;
+
+  @IsOptional()
+  @IsString()
+  stadiumImage: string | null = null;
 }

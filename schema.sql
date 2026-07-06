@@ -60,6 +60,8 @@ CREATE TABLE group_participants (
     group_id UUID NOT NULL,
     user_id UUID NOT NULL,
     accumulated_points INT NOT NULL DEFAULT 0,
+    previous_position INT DEFAULT NULL,
+    rank_delta INT NOT NULL DEFAULT 0,
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
@@ -83,6 +85,7 @@ CREATE TABLE matches (
     city VARCHAR(100) NOT NULL,
     home_team_badge VARCHAR(255) DEFAULT NULL,
     away_team_badge VARCHAR(255) DEFAULT NULL,
+    stadium_image VARCHAR(255) DEFAULT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
@@ -193,7 +196,25 @@ BEGIN
         updated_at = CURRENT_TIMESTAMP
         WHERE match_id = NEW.id;
 
-        -- B) Recálculo masivo y actualización de la tabla intermedia de posiciones
+        -- B) Guardar posiciones previas antes de actualizar los puntos
+        WITH current_ranks AS (
+            SELECT 
+                group_id, 
+                user_id,
+                ROW_NUMBER() OVER (PARTITION BY group_id ORDER BY accumulated_points DESC, joined_at ASC) as pos
+            FROM group_participants
+            WHERE group_id IN (
+                SELECT DISTINCT group_id 
+                FROM group_participants 
+                WHERE user_id IN (SELECT user_id FROM predictions WHERE match_id = NEW.id)
+            )
+        )
+        UPDATE group_participants gp
+        SET previous_position = cr.pos
+        FROM current_ranks cr
+        WHERE gp.group_id = cr.group_id AND gp.user_id = cr.user_id;
+
+        -- C) Recálculo masivo y actualización de la tabla intermedia de posiciones
         UPDATE group_participants gp
         SET accumulated_points = (
             SELECT COALESCE(SUM(p.points_earned), 0)
@@ -203,6 +224,24 @@ BEGIN
         WHERE gp.user_id IN (
             SELECT user_id FROM predictions WHERE match_id = NEW.id
         );
+
+        -- D) Calcular nuevas posiciones y actualizar el rank_delta
+        WITH new_ranks AS (
+            SELECT 
+                group_id, 
+                user_id,
+                ROW_NUMBER() OVER (PARTITION BY group_id ORDER BY accumulated_points DESC, joined_at ASC) as pos
+            FROM group_participants
+            WHERE group_id IN (
+                SELECT DISTINCT group_id 
+                FROM group_participants 
+                WHERE user_id IN (SELECT user_id FROM predictions WHERE match_id = NEW.id)
+            )
+        )
+        UPDATE group_participants gp
+        SET rank_delta = COALESCE(gp.previous_position, nr.pos) - nr.pos
+        FROM new_ranks nr
+        WHERE gp.group_id = nr.group_id AND gp.user_id = nr.user_id;
 
     END IF;
     

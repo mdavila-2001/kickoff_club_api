@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/enums/user-role.enum';
+import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-user.interface';
 
 @Controller('matches')
 export class MatchesController {
@@ -35,8 +37,12 @@ export class MatchesController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.matchesService.findById(id);
+  @UseGuards(JwtAuthGuard)
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.matchesService.findDetail(id, req.user.id);
   }
 
   @Post()

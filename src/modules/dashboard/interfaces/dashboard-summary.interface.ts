@@ -1,8 +1,11 @@
 export interface GroupRanking {
   groupId: string;
   groupName: string;
-  position: number;
+  position: number | null;
   accumulatedPoints: number;
+  exactPredictionsCount: number;
+  efficiencyRate: number;
+  rankDelta: number;
 }
 
 export interface DashboardSummary {

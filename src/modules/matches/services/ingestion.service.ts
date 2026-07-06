@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { Between, DataSource, EntityManager } from 'typeorm';
 
 import { ISportsProvider } from '../../sports-client/interfaces/sports-provider.interface';
 import { ExternalMatchDto } from '../../sports-client/dto/external-match.dto';
@@ -80,7 +80,7 @@ export class IngestionService {
         leagueId === '4429' &&
         (season === '2026' || season === '2025-2026')
       ) {
-        const rounds = ['1', '2', '3', '32', '16'];
+        const rounds = ['1', '2', '3', '32', '16', '8', '4', '2'];
         const apiSeason = '2026';
         this.logger.log(
           `Fetching 2026 World Cup by rounds: ${rounds.join(', ')} (API Season: ${apiSeason})...`,
@@ -213,9 +213,33 @@ export class IngestionService {
   ): Promise<void> {
     const matchRepository = manager.getRepository(MatchEntity);
 
-    const existing = await matchRepository.findOne({
+    let existing = await matchRepository.findOne({
       where: { externalApiId: matchDto.externalApiId },
     });
+
+    if (!existing && matchDto.externalApiId) {
+      // Intentamos emparejar por coincidencia de equipos y fecha para partidos manuales
+      const matchDate = new Date(matchDto.dateTime);
+      const startOfDay = new Date(matchDate);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(matchDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      existing = await matchRepository.findOne({
+        where: {
+          homeTeam: matchDto.homeTeam,
+          awayTeam: matchDto.awayTeam,
+          dateTime: Between(startOfDay, endOfDay),
+        },
+      });
+
+      if (existing) {
+        existing.externalApiId = matchDto.externalApiId;
+        this.logger.log(
+          `Partido manual detectado. Vinculando ID de API ${matchDto.externalApiId} al partido ID ${existing.id}`,
+        );
+      }
+    }
 
     const status = this.calculateMatchStatus(matchDto.dateTime);
 
@@ -224,6 +248,38 @@ export class IngestionService {
 
       if (existing.phase !== matchDto.phase) {
         existing.phase = matchDto.phase;
+        needsSave = true;
+      }
+      if (existing.homeTeam !== matchDto.homeTeam) {
+        existing.homeTeam = matchDto.homeTeam;
+        needsSave = true;
+      }
+      if (existing.awayTeam !== matchDto.awayTeam) {
+        existing.awayTeam = matchDto.awayTeam;
+        needsSave = true;
+      }
+      if (existing.stadium !== matchDto.stadium) {
+        existing.stadium = matchDto.stadium;
+        needsSave = true;
+      }
+      if (existing.city !== matchDto.city) {
+        existing.city = matchDto.city;
+        needsSave = true;
+      }
+      if (existing.homeTeamBadge !== matchDto.homeTeamBadge) {
+        existing.homeTeamBadge = matchDto.homeTeamBadge;
+        needsSave = true;
+      }
+      if (existing.awayTeamBadge !== matchDto.awayTeamBadge) {
+        existing.awayTeamBadge = matchDto.awayTeamBadge;
+        needsSave = true;
+      }
+      if (existing.externalApiId !== matchDto.externalApiId) {
+        existing.externalApiId = matchDto.externalApiId;
+        needsSave = true;
+      }
+      if (existing.stadiumImage !== matchDto.stadiumImage) {
+        existing.stadiumImage = matchDto.stadiumImage;
         needsSave = true;
       }
 
@@ -241,8 +297,6 @@ export class IngestionService {
       existing.awayScore = matchDto.awayScore;
       existing.status = status;
       existing.dateTime = matchDto.dateTime;
-      existing.homeTeamBadge = matchDto.homeTeamBadge;
-      existing.awayTeamBadge = matchDto.awayTeamBadge;
       await matchRepository.save(existing);
     } else {
       const newMatch = matchRepository.create({
@@ -255,6 +309,7 @@ export class IngestionService {
         phase: matchDto.phase,
         stadium: matchDto.stadium,
         city: matchDto.city,
+        stadiumImage: matchDto.stadiumImage,
         homeTeamBadge: matchDto.homeTeamBadge,
         awayTeamBadge: matchDto.awayTeamBadge,
         status,

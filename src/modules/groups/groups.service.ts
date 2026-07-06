@@ -109,11 +109,30 @@ export class GroupsService {
     });
   }
 
-  async getLeaderboard(groupId: string): Promise<GroupParticipantEntity[]> {
-    return this.participantsRepository.find({
+  async getLeaderboard(groupId: string): Promise<any[]> {
+    const participants = await this.participantsRepository.find({
       where: { groupId },
-      relations: { user: true },
+      relations: { user: { predictions: true } },
       order: { accumulatedPoints: 'DESC' },
+    });
+
+    return participants.map((p) => {
+      const predictions = p.user?.predictions ?? [];
+      const exactHits = predictions.filter((pred) => pred.pointsEarned === 3).length;
+
+      return {
+        groupId: p.groupId,
+        userId: p.userId,
+        accumulatedPoints: p.accumulatedPoints,
+        joinedAt: p.joinedAt,
+        predictionsMade: predictions.length,
+        exactHits,
+        user: {
+          id: p.user?.id,
+          username: p.user?.username,
+          name: p.user?.name,
+        },
+      };
     });
   }
 }

@@ -23,7 +23,7 @@ export class DashboardService {
   ) {}
 
   async getSummary(userId: string): Promise<DashboardSummary> {
-    const [participations, pendingMatchesCount, totalAccumulatedPoints] =
+    const [participations, pendingMatchesCount, totalAccumulatedPoints, stats] =
       await Promise.all([
         this.participantsRepository.find({
           where: { userId },
@@ -31,7 +31,28 @@ export class DashboardService {
         }),
         this.countPendingUnpredictedMatches(userId),
         this.calculateTotalPoints(userId),
+        this.predictionsRepository
+          .createQueryBuilder('prediction')
+          .select('COUNT(*)', 'total')
+          .addSelect(
+            'SUM(CASE WHEN prediction.points_earned = 3 THEN 1 ELSE 0 END)',
+            'exact',
+          )
+          .addSelect(
+            'SUM(CASE WHEN prediction.points_earned > 0 THEN 1 ELSE 0 END)',
+            'hits',
+          )
+          .where('prediction.user_id = :userId', { userId })
+          .andWhere('prediction.points_earned IS NOT NULL')
+          .getRawOne<{ total: string; exact: string; hits: string }>(),
       ]);
+
+    const total = parseInt(stats?.total ?? '0', 10);
+    const exact = parseInt(stats?.exact ?? '0', 10);
+    const hits = parseInt(stats?.hits ?? '0', 10);
+
+    const exactPredictionsCount = exact;
+    const efficiencyRate = total > 0 ? Math.round((hits / total) * 100) : 0;
 
     const groupsCount = participations.length;
 
@@ -40,13 +61,20 @@ export class DashboardService {
         const sorted = [...myParticipation.group.participants].sort(
           (a, b) => b.accumulatedPoints - a.accumulatedPoints,
         );
-        const position = sorted.findIndex((p) => p.userId === userId) + 1;
+        const maxPoints = sorted[0]?.accumulatedPoints ?? 0;
+        const position =
+          maxPoints > 0
+            ? sorted.findIndex((p) => p.userId === userId) + 1
+            : null;
 
         return {
           groupId: myParticipation.groupId,
           groupName: myParticipation.group.name,
           position,
           accumulatedPoints: myParticipation.accumulatedPoints,
+          exactPredictionsCount,
+          efficiencyRate,
+          rankDelta: myParticipation.rankDelta ?? 0,
         };
       },
     );
