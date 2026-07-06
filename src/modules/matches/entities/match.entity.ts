@@ -99,6 +99,17 @@ export class MatchEntity {
   @IsString()
   awayTeamBadge: string | null;
 
+  @Column({
+    name: 'stadium_image',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    default: null,
+  })
+  @IsOptional()
+  @IsString()
+  stadiumImage: string | null;
+
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
