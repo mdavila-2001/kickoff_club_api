@@ -22,10 +22,6 @@ export class IngestionService {
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Orquesta la llamada al proveedor de deportes, inicia la transacción,
-   * procesa el lote de partidos de forma idempotente y asegura el commit/rollback.
-   */
   public async syncMatches(): Promise<{
     synchronized: number;
     status: string;

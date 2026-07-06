@@ -64,7 +64,16 @@ export class MatchesService {
     const match = await this.findById(id);
 
     const updates: Partial<
-      Pick<MatchEntity, 'dateTime' | 'phase' | 'stadium' | 'city'>
+      Pick<
+        MatchEntity,
+        | 'dateTime'
+        | 'phase'
+        | 'stadium'
+        | 'city'
+        | 'status'
+        | 'homeScore'
+        | 'awayScore'
+      >
     > = {};
 
     if (dto.dateTime !== undefined) {
@@ -78,6 +87,15 @@ export class MatchesService {
     }
     if (dto.city !== undefined) {
       updates.city = dto.city;
+    }
+    if (dto.status !== undefined) {
+      updates.status = dto.status;
+    }
+    if (dto.homeScore !== undefined) {
+      updates.homeScore = dto.homeScore;
+    }
+    if (dto.awayScore !== undefined) {
+      updates.awayScore = dto.awayScore;
     }
 
     Object.assign(match, updates);

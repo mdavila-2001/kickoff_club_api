@@ -7,6 +7,9 @@ export class MatchesCronService {
   private readonly logger = new Logger(MatchesCronService.name);
   private isSyncing = false;
 
+  private static readonly WORLD_CUP_LEAGUE_ID = '4429';
+  private static readonly WORLD_CUP_SEASON = '2026';
+
   constructor(private readonly ingestionService: IngestionService) {}
 
   @Cron('0 */20 * * * *')
@@ -18,17 +21,20 @@ export class MatchesCronService {
 
     this.isSyncing = true;
     this.logger.log(
-      'Iniciando sincronización automática de partidos desde el proveedor externo',
+      `Iniciando sincronización automática del Mundial 2026 (liga ${MatchesCronService.WORLD_CUP_LEAGUE_ID}, temporada ${MatchesCronService.WORLD_CUP_SEASON})`,
     );
 
     try {
-      const result = await this.ingestionService.syncMatches();
+      const result = await this.ingestionService.syncMatchesBySeason(
+        MatchesCronService.WORLD_CUP_LEAGUE_ID,
+        MatchesCronService.WORLD_CUP_SEASON,
+      );
       this.logger.log(
-        `Sincronización automática completada con éxito. Partidos procesados: ${result.synchronized}`,
+        `Sincronización automática completada con éxito. Partidos sincronizados: ${result.synchronized}`,
       );
     } catch (error) {
       this.logger.error(
-        'Fallo en la sincronización automática de partidos',
+        'Fallo en la sincronización automática de partidos del Mundial 2026',
         error instanceof Error ? error.stack : String(error),
       );
     } finally {

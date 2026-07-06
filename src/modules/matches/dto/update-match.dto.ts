@@ -1,4 +1,13 @@
-import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
+import { MatchStatus } from '../enums/match-status.enum';
 
 export class UpdateMatchDto {
   @IsDateString()
@@ -19,4 +28,18 @@ export class UpdateMatchDto {
   @IsOptional()
   @MaxLength(100)
   city?: string;
+
+  @IsEnum(MatchStatus)
+  @IsOptional()
+  status?: MatchStatus;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  homeScore?: number;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  awayScore?: number;
 }

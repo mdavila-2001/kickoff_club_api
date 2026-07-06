@@ -22,4 +22,10 @@ export class AuthController {
   login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(loginDto);
   }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(): { message: string } {
+    return { message: 'Sesión cerrada exitosamente.' };
+  }
 }
