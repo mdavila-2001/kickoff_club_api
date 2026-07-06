@@ -92,6 +92,8 @@ export class IngestionService {
             apiSeason,
           );
           externalMatches.push(...roundMatches);
+          // Esperar 1 segundo entre rondas para evitar rate limit (HTTP 429)
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       } else {
         externalMatches = await this.sportsProvider.fetchMatchesBySeason(

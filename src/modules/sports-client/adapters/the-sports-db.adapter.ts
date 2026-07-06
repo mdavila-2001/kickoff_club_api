@@ -344,6 +344,9 @@ export class TheSportsDbAdapter implements ISportsProvider {
     }
 
     try {
+      // Delay de 300ms para evitar rate limiting (HTTP 429) de TheSportsDb
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       let url: string;
       const headers: Record<string, string> = {};
 
