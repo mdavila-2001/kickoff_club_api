@@ -15,6 +15,8 @@ import { IngestionService } from './services/ingestion.service';
 import { FilterMatchesDto } from './dto/filter-matches.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
+import { SyncSeasonDto } from './dto/sync-season.dto';
+import { SyncDayDto } from './dto/sync-day.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -66,6 +68,46 @@ export class MatchesController {
     return {
       success: true,
       message: 'Sincronización forzada completada con éxito',
+      synchronized: result.synchronized,
+    };
+  }
+
+  @Post('sync/season')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async syncSeason(@Body() dto: SyncSeasonDto): Promise<{
+    success: boolean;
+    message: string;
+    synchronized: number;
+  }> {
+    const result = await this.ingestionService.syncMatchesBySeason(
+      dto.leagueId,
+      dto.season,
+    );
+    return {
+      success: true,
+      message: `Sincronización de temporada ${dto.season} de la liga ${dto.leagueId} completada con éxito`,
+      synchronized: result.synchronized,
+    };
+  }
+
+  @Post('sync/day')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async syncDay(@Body() dto: SyncDayDto): Promise<{
+    success: boolean;
+    message: string;
+    synchronized: number;
+  }> {
+    const targetDate = dto.date || new Date().toISOString().split('T')[0];
+    const result = await this.ingestionService.syncMatchesByDay(
+      targetDate,
+      dto.leagueId,
+    );
+
+    return {
+      success: true,
+      message: `Sincronización diaria para la fecha ${targetDate} completada con éxito`,
       synchronized: result.synchronized,
     };
   }

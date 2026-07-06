@@ -1,17 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import type { Request } from 'express';
-
+import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { PredictionsService } from './predictions.service';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-user.interface';
 
 @UseGuards(JwtAuthGuard)
 @Controller('predictions')
@@ -21,7 +12,7 @@ export class PredictionsController {
   @Post()
   create(
     @Body() createPredictionDto: CreatePredictionDto,
-    @Req() req: Request & { user: AuthenticatedUser },
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.predictionsService.createOrUpdatePrediction(
       req.user.id,
@@ -30,7 +21,7 @@ export class PredictionsController {
   }
 
   @Get('me')
-  findMyPredictions(@Req() req: Request & { user: AuthenticatedUser }) {
+  findMyPredictions(@Req() req: AuthenticatedRequest) {
     return this.predictionsService.findUserPredictions(req.user.id);
   }
 }

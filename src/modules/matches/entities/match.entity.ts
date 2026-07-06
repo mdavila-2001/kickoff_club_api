@@ -77,6 +77,28 @@ export class MatchEntity {
   @IsString()
   city: string;
 
+  @Column({
+    name: 'home_team_badge',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    default: null,
+  })
+  @IsOptional()
+  @IsString()
+  homeTeamBadge: string | null;
+
+  @Column({
+    name: 'away_team_badge',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    default: null,
+  })
+  @IsOptional()
+  @IsString()
+  awayTeamBadge: string | null;
+
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 

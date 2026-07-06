@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
 import { UserEntity } from './entities/user.entity';
 import { CreateUserData } from './interfaces/create-user-data.interface';
@@ -45,6 +49,16 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (dto.username) {
+      const usernameTaken = await this.usersRepository.findOne({
+        where: { username: dto.username, id: Not(userId) },
+      });
+
+      if (usernameTaken) {
+        throw new ConflictException('El nombre de usuario ya está en uso');
+      }
     }
 
     Object.assign(user, dto);
