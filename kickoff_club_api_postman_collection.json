@@ -1,0 +1,770 @@
+{
+	"info": {
+		"_postman_id": "b1a13476-8083-4a15-b049-5bb876c1bb0b",
+		"name": "KickOff Club API 2026",
+		"description": "Colección de endpoints para testear el backend del proyecto KickOff Club. Contiene flujos de autenticación, grupos privados, partidos, pronósticos y estadísticas del panel.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"testuser@kickoffclub.com\",\n    \"password\": \"Password123!\",\n    \"name\": \"Juan\",\n    \"lastName\": \"Perez\",\n    \"middleName\": \"Carlos\",\n    \"motherLastName\": \"Gomez\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario en la plataforma con contraseña hasheada y datos sanitizados en el retorno."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.accessToken) {",
+									"    pm.collectionVariables.set(\"authToken\", response.accessToken);",
+									"    console.log(\"Token guardado automáticamente en la variable {{authToken}}\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"testuser@kickoffclub.com\",\n    \"password\": \"Password123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica al usuario. Este request guarda automáticamente el Token JWT retornado en las variables de la colección."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();",
+									"if (response.accessToken) {",
+									"    pm.collectionVariables.set(\"authToken\", response.accessToken);",
+									"    console.log(\"Token de Admin guardado automáticamente en la variable {{authToken}}\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@kickoffclub.com\",\n    \"password\": \"Admin123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión con el usuario administrador del seeder inicial."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Obtiene el perfil del usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Juan Modificado\",\n    \"lastName\": \"Perez Modificado\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Actualiza el nombre, apellido, o username del perfil del usuario actual."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Groups",
+			"item": [
+				{
+					"name": "Create Group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Mi Grupo Mundialista\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/groups",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups"
+							]
+						},
+						"description": "Crea un grupo privado y retorna el código único autogenerado de invitación."
+					},
+					"response": []
+				},
+				{
+					"name": "Join Group by Invite Code",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/groups/join/:inviteCode",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								"join",
+								":inviteCode"
+							],
+							"variable": [
+								{
+									"key": "inviteCode",
+									"value": "CAMBIA_ESTO"
+								}
+							]
+						},
+						"description": "Une al usuario actual a un grupo privado utilizando el código de invitación obtenido al crear el grupo."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Groups",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/groups/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								"me"
+							]
+						},
+						"description": "Lista todos los grupos a los que pertenece el usuario actual."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Group Participants",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/groups/:groupId/participants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"participants"
+							],
+							"variable": [
+								{
+									"key": "groupId",
+									"value": "CAMBIA_POR_UUID_DE_GRUPO"
+								}
+							]
+						},
+						"description": "Obtiene la lista de los participantes de un grupo específico por su UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Group Leaderboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/groups/:groupId/leaderboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"groups",
+								":groupId",
+								"leaderboard"
+							],
+							"variable": [
+								{
+									"key": "groupId",
+									"value": "CAMBIA_POR_UUID_DE_GRUPO"
+								}
+							]
+						},
+						"description": "Obtiene la tabla de posiciones (clasificación/leaderboard) de un grupo ordenado por puntaje acumulado de forma descendente."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Matches",
+			"item": [
+				{
+					"name": "Get All Matches (Filtered)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/matches?status=PENDING&phase=La Liga",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "PENDING",
+									"description": "Filtro opcional por estado: PENDING, ONGOING, FINISHED"
+								},
+								{
+									"key": "phase",
+									"value": "La Liga",
+									"description": "Filtro opcional por fase / liga"
+								}
+							]
+						},
+						"description": "Obtiene la lista completa de partidos, opcionalmente filtrada por estado y fase."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Match By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/matches/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CAMBIA_POR_UUID_DE_PARTIDO"
+								}
+							]
+						},
+						"description": "Obtiene los detalles de un partido por su UUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Match (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"homeTeam\": \"Bolivia\",\n    \"awayTeam\": \"Ecuador\",\n    \"dateTime\": \"2026-07-06T18:00:00.000Z\",\n    \"phase\": \"Eliminatorias\",\n    \"stadium\": \"Hernando Siles\",\n    \"city\": \"La Paz\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/matches",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches"
+							]
+						},
+						"description": "Crea un partido manualmente en el sistema (requiere rol ADMIN)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Match (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"homeScore\": 3,\n    \"awayScore\": 1,\n    \"status\": \"FINISHED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/matches/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "CAMBIA_POR_UUID_DE_PARTIDO"
+								}
+							]
+						},
+						"description": "Actualiza el resultado y estado de un partido (requiere rol ADMIN). Si cambia a FINISHED, se disparará automáticamente el cálculo de puntos y actualización de leaderboard."
+					},
+					"response": []
+				},
+				{
+					"name": "Force Sync Matches (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/matches/sync/force",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches",
+								"sync",
+								"force"
+							]
+						},
+						"description": "Fuerza la ingesta de partidos desde TheSportsDB. Si estás en modo desarrollo con la clave 123 y falla, inyectará y guardará los partidos de simulación con sus respectivos escudos oficiales."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Season Fixture (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"leagueId\": \"4429\",\n    \"season\": \"2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/matches/sync/season",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches",
+								"sync",
+								"season"
+							]
+						},
+						"description": "Sincroniza masivamente todo el fixture de una liga y temporada específica (por ejemplo, el Mundial 2026 con id 4429 y temporada 2026)."
+					},
+					"response": []
+				},
+				{
+					"name": "Sincronizar partidos (Partidos en Vivo) (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2026-06-11\",\n    \"leagueId\": \"4429\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/matches/sync/day",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"matches",
+								"sync",
+								"day"
+							]
+						},
+						"description": "Sincroniza los partidos de un día específico (y liga opcional) para obtener resultados en vivo (live scores) o actualizar los partidos de la fecha indicada."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Predictions",
+			"item": [
+				{
+					"name": "Create or Update Prediction",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"matchId\": \"CAMBIA_POR_UUID_DE_PARTIDO\",\n    \"predictedHome\": 2,\n    \"predictedAway\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/predictions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"predictions"
+							]
+						},
+						"description": "Crea o actualiza el pronóstico del usuario actual para un partido. El trigger en la base de datos bloqueará la transacción con un error 45000 si el partido ya ha iniciado."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Predictions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/predictions/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"predictions",
+								"me"
+							]
+						},
+						"description": "Retorna todos los pronósticos creados por el usuario actual."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"dashboard",
+								"summary"
+							]
+						},
+						"description": "Retorna el resumen del dashboard para el usuario actual (puntos totales, posición en grupos, etc.)."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

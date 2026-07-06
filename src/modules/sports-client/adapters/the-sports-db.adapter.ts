@@ -20,6 +20,7 @@ interface TheSportsDbEvent {
   strCity?: string;
   strHomeTeamBadge?: string;
   strAwayTeamBadge?: string;
+  intRound?: string;
 }
 
 interface TheSportsDbResponse {
@@ -266,53 +267,117 @@ export class TheSportsDbAdapter implements ISportsProvider {
       return [];
     }
 
-    return rawEvents.map((event) => {
-      const externalApiId = event.idEvent;
-      const homeTeam = event.strHomeTeam || 'Unknown Home Team';
-      const awayTeam = event.strAwayTeam || 'Unknown Away Team';
-      const homeScore =
-        event.intHomeScore !== null &&
-        event.intHomeScore !== undefined &&
-        event.intHomeScore !== ''
-          ? Number(event.intHomeScore)
-          : null;
-      const awayScore =
-        event.intAwayScore !== null &&
-        event.intAwayScore !== undefined &&
-        event.intAwayScore !== ''
-          ? Number(event.intAwayScore)
-          : null;
+    return rawEvents.map((event) => this.mapSingleEvent(event));
+  }
 
-      const datePart = event.dateEvent
-        ? event.dateEvent.split('T')[0]
-        : '1970-01-01';
-      const timePart = event.strTime || '00:00:00';
-      let combinedIsoStr = `${datePart}T${timePart}`;
-      if (!combinedIsoStr.includes('+') && !combinedIsoStr.endsWith('Z')) {
-        combinedIsoStr += 'Z';
-      }
-      const dateTime = new Date(combinedIsoStr);
+  private mapSingleEvent(event: TheSportsDbEvent): ExternalMatchDto {
+    const externalApiId = event.idEvent;
+    const homeTeam = event.strHomeTeam || 'Unknown Home Team';
+    const awayTeam = event.strAwayTeam || 'Unknown Away Team';
 
-      const phase = event.strLeague || 'Unknown League';
-      const stadium = event.strVenue || 'Unknown Venue';
-      const city = event.strCity || 'Unknown City';
+    const homeScore =
+      event.intHomeScore !== null &&
+      event.intHomeScore !== undefined &&
+      event.intHomeScore !== ''
+        ? Number(event.intHomeScore)
+        : null;
 
-      const dto = new ExternalMatchDto();
-      dto.externalApiId = externalApiId;
-      dto.homeTeam = homeTeam;
-      dto.awayTeam = awayTeam;
-      dto.homeScore =
-        homeScore !== null && Number.isNaN(homeScore) ? null : homeScore;
-      dto.awayScore =
-        awayScore !== null && Number.isNaN(awayScore) ? null : awayScore;
-      dto.dateTime = Number.isNaN(dateTime.getTime()) ? new Date() : dateTime;
-      dto.phase = phase;
-      dto.stadium = stadium;
-      dto.city = city;
-      dto.homeTeamBadge = event.strHomeTeamBadge || null;
-      dto.awayTeamBadge = event.strAwayTeamBadge || null;
+    const awayScore =
+      event.intAwayScore !== null &&
+      event.intAwayScore !== undefined &&
+      event.intAwayScore !== ''
+        ? Number(event.intAwayScore)
+        : null;
 
-      return dto;
-    });
+    const datePart = event.dateEvent
+      ? event.dateEvent.split('T')[0]
+      : '1970-01-01';
+    const timePart = event.strTime || '00:00:00';
+    let combinedIsoStr = `${datePart}T${timePart}`;
+    if (!combinedIsoStr.includes('+') && !combinedIsoStr.endsWith('Z')) {
+      combinedIsoStr += 'Z';
+    }
+    const dateTime = new Date(combinedIsoStr);
+
+    const phase = this.determinePhase(event.strLeague, event.intRound);
+    const stadium = event.strVenue || 'Unknown Venue';
+    const city = event.strCity || 'Unknown City';
+
+    const dto = new ExternalMatchDto();
+    dto.externalApiId = externalApiId;
+    dto.homeTeam = homeTeam;
+    dto.awayTeam = awayTeam;
+    dto.homeScore =
+      homeScore !== null && Number.isNaN(homeScore) ? null : homeScore;
+    dto.awayScore =
+      awayScore !== null && Number.isNaN(awayScore) ? null : awayScore;
+    dto.dateTime = Number.isNaN(dateTime.getTime()) ? new Date() : dateTime;
+    dto.phase = phase;
+    dto.stadium = stadium;
+    dto.city = city;
+    dto.homeTeamBadge = event.strHomeTeamBadge || null;
+    dto.awayTeamBadge = event.strAwayTeamBadge || null;
+
+    return dto;
+  }
+
+  private determinePhase(league?: string, roundRaw?: string): string {
+    const defaultPhase = league || 'Unknown League';
+    if (!league && !roundRaw) {
+      return defaultPhase;
+    }
+
+    const leagueLower = league?.toLowerCase() || '';
+    if (
+      !leagueLower.includes('world cup') &&
+      !leagueLower.includes('copa del mundo') &&
+      !roundRaw
+    ) {
+      return defaultPhase;
+    }
+
+    const round = roundRaw?.trim().toLowerCase();
+    if (!round) {
+      return defaultPhase;
+    }
+
+    if (
+      round === '1' ||
+      round === '2' ||
+      round === '3' ||
+      round.includes('group')
+    ) {
+      return 'Fase de Grupos';
+    }
+
+    if (round === '32' || round.includes('32')) {
+      return 'Dieciseisavos de Final';
+    }
+
+    if (round === '16' || round.includes('16') || round.includes('octavos')) {
+      return 'Octavos de Final';
+    }
+
+    if (
+      round === '8' ||
+      round.includes('quarter') ||
+      round.includes('cuartos')
+    ) {
+      return 'Cuartos de Final';
+    }
+
+    if (round === '4' || round.includes('semi')) {
+      return 'Semifinal';
+    }
+
+    if (round === '2' || round.includes('third') || round.includes('tercer')) {
+      return 'Tercer Puesto';
+    }
+
+    if (round === '1' || round.includes('final')) {
+      return 'Final';
+    }
+
+    return defaultPhase;
   }
 }
