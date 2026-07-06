@@ -7,6 +7,8 @@ import { PostgresExceptionFilter } from './common/filters/postgres-exception.fil
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors();
+
   app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(
