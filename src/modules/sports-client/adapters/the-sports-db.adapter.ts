@@ -260,7 +260,6 @@ export class TheSportsDbAdapter implements ISportsProvider {
     }
   }
 
-
   private mapResponse(data: TheSportsDbResponse): ExternalMatchDto[] {
     const rawEvents = data.events || data.livescore;
     if (!rawEvents || !Array.isArray(rawEvents)) {

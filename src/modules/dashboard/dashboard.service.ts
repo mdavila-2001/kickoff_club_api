@@ -35,20 +35,21 @@ export class DashboardService {
 
     const groupsCount = participations.length;
 
-    const groupRankings: GroupRanking[] = participations.map((myParticipation) => {
-      const sorted = [...myParticipation.group.participants].sort(
-        (a, b) => b.accumulatedPoints - a.accumulatedPoints,
-      );
-      const position =
-        sorted.findIndex((p) => p.userId === userId) + 1;
+    const groupRankings: GroupRanking[] = participations.map(
+      (myParticipation) => {
+        const sorted = [...myParticipation.group.participants].sort(
+          (a, b) => b.accumulatedPoints - a.accumulatedPoints,
+        );
+        const position = sorted.findIndex((p) => p.userId === userId) + 1;
 
-      return {
-        groupId: myParticipation.groupId,
-        groupName: myParticipation.group.name,
-        position,
-        accumulatedPoints: myParticipation.accumulatedPoints,
-      };
-    });
+        return {
+          groupId: myParticipation.groupId,
+          groupName: myParticipation.group.name,
+          position,
+          accumulatedPoints: myParticipation.accumulatedPoints,
+        };
+      },
+    );
 
     return {
       groupsCount,

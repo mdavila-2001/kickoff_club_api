@@ -32,10 +32,7 @@ export class GroupsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(
-    dto: CreateGroupDto,
-    creatorId: string,
-  ): Promise<GroupEntity> {
+  async create(dto: CreateGroupDto, creatorId: string): Promise<GroupEntity> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -67,7 +64,10 @@ export class GroupsService {
     }
   }
 
-  async joinGroup(inviteCode: string, userId: string): Promise<GroupParticipantEntity> {
+  async joinGroup(
+    inviteCode: string,
+    userId: string,
+  ): Promise<GroupParticipantEntity> {
     const group = await this.groupsRepository.findOne({
       where: { inviteCode },
     });
@@ -96,7 +96,7 @@ export class GroupsService {
   async findMyGroups(userId: string): Promise<GroupEntity[]> {
     const participations = await this.participantsRepository.find({
       where: { userId },
-      relations: { group: true },
+      relations: { group: { participants: true } },
     });
 
     return participations.map((p) => p.group);
