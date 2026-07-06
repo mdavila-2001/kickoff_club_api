@@ -220,9 +220,19 @@ export class IngestionService {
     const status = this.calculateMatchStatus(matchDto.dateTime);
 
     if (existing) {
+      let needsSave = false;
+
+      if (existing.phase !== matchDto.phase) {
+        existing.phase = matchDto.phase;
+        needsSave = true;
+      }
+
       if (existing.status === MatchStatus.FINISHED) {
+        if (needsSave) {
+          await matchRepository.save(existing);
+        }
         this.logger.warn(
-          `Partido ${existing.id} (ext: ${matchDto.externalApiId}) ya está FINISHED — omitiendo mutación`,
+          `Partido ${existing.id} (ext: ${matchDto.externalApiId}) ya está FINISHED — omitiendo mutación de marcador/estado`,
         );
         return;
       }
