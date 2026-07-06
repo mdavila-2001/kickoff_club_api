@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-
 import { UsersService } from '../users/users.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -15,24 +14,19 @@ import {
   AuthUserProfile,
   AuthResponse,
 } from './interfaces/auth-response.interface';
-
 const BCRYPT_SALT_ROUNDS = 10;
-
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) {}
-
   async register(dto: RegisterUserDto): Promise<AuthUserProfile> {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('El email ya está registrado');
     }
-
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
-
     const user = await this.usersService.create({
       username: dto.username,
       email: dto.email,
@@ -42,17 +36,13 @@ export class AuthService {
       middleName: dto.middleName,
       motherLastName: dto.motherLastName,
     });
-
     return this.toProfile(user);
   }
-
   async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.usersService.findByEmail(dto.email);
-
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-
     const passwordMatches = await bcrypt.compare(
       dto.password,
       user.passwordHash,
@@ -60,7 +50,6 @@ export class AuthService {
     if (!passwordMatches) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-
     const payload: JwtPayload = {
       sub: user.id,
       id: user.id,
@@ -72,13 +61,11 @@ export class AuthService {
       role: user.role,
     };
     const accessToken = await this.jwtService.signAsync(payload);
-
     return {
       accessToken,
       user: this.toProfile(user),
     };
   }
-
   private toProfile(user: UserEntity): AuthUserProfile {
     return {
       id: user.id,

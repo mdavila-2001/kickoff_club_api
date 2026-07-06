@@ -7,7 +7,6 @@ export interface GroupRanking {
   efficiencyRate: number;
   rankDelta: number;
 }
-
 export interface DashboardSummary {
   groupsCount: number;
   pendingMatchesCount: number;
