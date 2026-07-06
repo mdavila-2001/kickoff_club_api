@@ -13,7 +13,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import {
   AuthUserProfile,
-  LoginResponse,
+  AuthResponse,
 } from './interfaces/auth-response.interface';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -46,11 +46,11 @@ export class AuthService {
     return this.toProfile(user);
   }
 
-  async login(dto: LoginDto): Promise<LoginResponse> {
+  async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {
-      throw new UnauthorizedException('Credenciales incorrectas');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const passwordMatches = await bcrypt.compare(
@@ -58,12 +58,17 @@ export class AuthService {
       user.passwordHash,
     );
     if (!passwordMatches) {
-      throw new UnauthorizedException('Credenciales incorrectas');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const payload: JwtPayload = {
       sub: user.id,
+      id: user.id,
       email: user.email,
+      name: user.name,
+      middleName: user.middleName,
+      lastName: user.lastName,
+      motherLastName: user.motherLastName,
       role: user.role,
     };
     const accessToken = await this.jwtService.signAsync(payload);
@@ -74,10 +79,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Proyección explícita campo por campo: passwordHash queda
-   * estructuralmente excluido de toda respuesta de la API.
-   */
   private toProfile(user: UserEntity): AuthUserProfile {
     return {
       id: user.id,

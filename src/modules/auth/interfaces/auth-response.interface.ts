@@ -17,7 +17,15 @@ export interface AuthUserProfile {
   updatedAt: Date;
 }
 
-export interface LoginResponse {
+/**
+ * Formato universal de respuesta para flujos exitosos de autenticación.
+ */
+export interface AuthResponse {
   accessToken: string;
   user: AuthUserProfile;
 }
+
+/**
+ * Alias de compatibilidad hacia atrás.
+ */
+export type LoginResponse = AuthResponse;

@@ -54,7 +54,12 @@ export class UserEntity {
   @IsString()
   motherLastName: string | null;
 
-  @Column({ name: 'role', type: 'enum', enum: UserRole, default: UserRole.USER })
+  @Column({
+    name: 'role',
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
   @IsEnum(UserRole)
   role: UserRole;
 
@@ -64,18 +69,15 @@ export class UserEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  // Grupos creados por este usuario (inverso de GroupEntity.creator).
   @OneToMany(() => GroupEntity, (group) => group.creator)
   groups: GroupEntity[];
 
-  // Grupos en los que participa (inverso de GroupParticipantEntity.user).
   @OneToMany(
     () => GroupParticipantEntity,
     (participation) => participation.user,
   )
   groupParticipations: GroupParticipantEntity[];
 
-  // Pronósticos emitidos por este usuario (inverso de PredictionEntity.user).
   @OneToMany(() => PredictionEntity, (prediction) => prediction.user)
   predictions: PredictionEntity[];
 }

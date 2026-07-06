@@ -1,18 +1,45 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
 import { CreatePredictionDto } from './dto/create-prediction.dto';
-import { UpdatePredictionDto } from './dto/update-prediction.dto';
+import { PredictionEntity } from './entities/prediction.entity';
 
 @Injectable()
 export class PredictionsService {
-  async create(createPredictionDto: CreatePredictionDto) {
-    // TODO: Implement create prediction logic
+  constructor(
+    @InjectRepository(PredictionEntity)
+    private readonly predictionsRepository: Repository<PredictionEntity>,
+  ) {}
+
+  async createOrUpdatePrediction(
+    userId: string,
+    dto: CreatePredictionDto,
+  ): Promise<PredictionEntity> {
+    const existing = await this.predictionsRepository.findOne({
+      where: { userId, matchId: dto.matchId },
+    });
+
+    if (existing) {
+      existing.predictedHome = dto.predictedHome;
+      existing.predictedAway = dto.predictedAway;
+      return this.predictionsRepository.save(existing);
+    }
+
+    const prediction = this.predictionsRepository.create({
+      userId,
+      matchId: dto.matchId,
+      predictedHome: dto.predictedHome,
+      predictedAway: dto.predictedAway,
+    });
+
+    return this.predictionsRepository.save(prediction);
   }
 
-  async update(id: string, updatePredictionDto: UpdatePredictionDto) {
-    // TODO: Implement update prediction logic
-  }
-
-  async findAll() {
-    // TODO: Implement find all predictions logic
+  async findUserPredictions(userId: string): Promise<PredictionEntity[]> {
+    return this.predictionsRepository.find({
+      where: { userId },
+      relations: { match: true },
+    });
   }
 }

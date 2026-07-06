@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryColumn,
 } from 'typeorm';
-import { IsInt, IsUUID, Min } from 'class-validator';
+import { IsInt, IsOptional, IsUUID, Min } from 'class-validator';
 
 import { GroupEntity } from './group.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -31,6 +31,15 @@ export class GroupParticipantEntity {
   @IsInt()
   @Min(0)
   accumulatedPoints: number;
+
+  @Column({ name: 'previous_position', type: 'integer', nullable: true })
+  @IsOptional()
+  @IsInt()
+  previousPosition: number | null;
+
+  @Column({ name: 'rank_delta', type: 'integer', default: 0 })
+  @IsInt()
+  rankDelta: number;
 
   @CreateDateColumn({ name: 'joined_at', type: 'timestamp with time zone' })
   joinedAt: Date;

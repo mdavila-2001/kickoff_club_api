@@ -40,9 +40,6 @@ export class GroupEntity {
   creator: UserEntity;
 
   // Miembros del grupo (inverso de GroupParticipantEntity.group).
-  @OneToMany(
-    () => GroupParticipantEntity,
-    (participant) => participant.group,
-  )
+  @OneToMany(() => GroupParticipantEntity, (participant) => participant.group)
   participants: GroupParticipantEntity[];
 }
