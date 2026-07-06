@@ -118,7 +118,9 @@ export class GroupsService {
 
     return participants.map((p) => {
       const predictions = p.user?.predictions ?? [];
-      const exactHits = predictions.filter((pred) => pred.pointsEarned === 3).length;
+      const exactHits = predictions.filter(
+        (pred) => pred.pointsEarned === 3,
+      ).length;
 
       return {
         groupId: p.groupId,

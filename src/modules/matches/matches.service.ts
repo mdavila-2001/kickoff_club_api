@@ -116,7 +116,7 @@ export class MatchesService {
     }
 
     const predictions = match.predictions ?? [];
-    
+
     // Calculate aggregate prediction stats
     const total = predictions.length;
     let homeWinCount = 0;

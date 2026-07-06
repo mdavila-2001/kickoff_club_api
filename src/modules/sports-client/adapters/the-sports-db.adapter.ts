@@ -1,6 +1,7 @@
 import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
 
 import { ISportsProvider } from '../interfaces/sports-provider.interface';
@@ -55,6 +56,28 @@ export class TheSportsDbAdapter implements ISportsProvider {
     this.isV2 = this.baseUrl.includes('/v2');
   }
 
+  private async getWithRetry<T>(
+    url: string,
+    options?: { headers?: Record<string, string> },
+    retries = 5,
+    delay = 1000,
+  ): Promise<AxiosResponse<T>> {
+    try {
+      return await firstValueFrom(this.httpService.get<T>(url, options));
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      const status = axiosError?.response?.status;
+      if (status === 429 && retries > 0) {
+        this.logger.warn(
+          `Request to ${url} rate limited (429). Retrying in ${delay}ms... (${retries} retries left)`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.getWithRetry<T>(url, options, retries - 1, delay * 2);
+      }
+      throw error;
+    }
+  }
+
   async fetchLiveMatches(): Promise<ExternalMatchDto[]> {
     try {
       if (this.isV2) {
@@ -62,9 +85,9 @@ export class TheSportsDbAdapter implements ISportsProvider {
         const headers = { 'X-API-KEY': this.apiKey };
 
         this.logger.log(`Fetching live matches from V2 API: ${url}`);
-        const response = await firstValueFrom(
-          this.httpService.get<TheSportsDbResponse>(url, { headers }),
-        );
+        const response = await this.getWithRetry<TheSportsDbResponse>(url, {
+          headers,
+        });
         return await this.mapResponse(response.data);
       } else {
         const today = new Date().toISOString().split('T')[0];
@@ -98,9 +121,9 @@ export class TheSportsDbAdapter implements ISportsProvider {
       }
 
       this.logger.log(`Fetching matches for date ${date} from: ${url}`);
-      const response = await firstValueFrom(
-        this.httpService.get<TheSportsDbResponse>(url, { headers }),
-      );
+      const response = await this.getWithRetry<TheSportsDbResponse>(url, {
+        headers,
+      });
 
       const responseData = response.data as Record<string, unknown>;
       if (
@@ -146,9 +169,7 @@ export class TheSportsDbAdapter implements ISportsProvider {
     this.logger.debug(`Fetching day matches: ${url}`);
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.get<TheSportsDbResponse>(url),
-      );
+      const response = await this.getWithRetry<TheSportsDbResponse>(url);
 
       if (!response.data?.events) {
         return [];
@@ -187,9 +208,9 @@ export class TheSportsDbAdapter implements ISportsProvider {
       this.logger.log(
         `Fetching matches for league ${leagueId} season ${season} from: ${url}`,
       );
-      const response = await firstValueFrom(
-        this.httpService.get<TheSportsDbResponse>(url, { headers }),
-      );
+      const response = await this.getWithRetry<TheSportsDbResponse>(url, {
+        headers,
+      });
 
       const responseData = response.data as Record<string, unknown>;
       if (
@@ -240,9 +261,9 @@ export class TheSportsDbAdapter implements ISportsProvider {
     this.logger.debug(`Fetching round matches: ${url}`);
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.get<TheSportsDbResponse>(url, { headers }),
-      );
+      const response = await this.getWithRetry<TheSportsDbResponse>(url, {
+        headers,
+      });
 
       if (!response.data?.events) {
         return [];
@@ -360,11 +381,11 @@ export class TheSportsDbAdapter implements ISportsProvider {
       this.logger.debug(
         `Fetching stadium details for venue ID ${venueId} from: ${url}`,
       );
-      const response = await firstValueFrom(
-        this.httpService.get<{ venues?: { strThumb?: string }[] | null }>(url, {
-          headers,
-        }),
-      );
+      const response = await this.getWithRetry<{
+        venues?: { strThumb?: string }[] | null;
+      }>(url, {
+        headers,
+      });
 
       const thumb = response.data?.venues?.[0]?.strThumb || null;
       this.venueCache.set(venueId, thumb);
