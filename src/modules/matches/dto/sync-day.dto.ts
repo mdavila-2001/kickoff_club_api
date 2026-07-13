@@ -1,5 +1,4 @@
 import { IsOptional, IsString, Matches } from 'class-validator';
-
 export class SyncDayDto {
   @IsOptional()
   @IsString()
@@ -7,7 +6,6 @@ export class SyncDayDto {
     message: 'date must be in YYYY-MM-DD format',
   })
   date?: string;
-
   @IsOptional()
   @IsString()
   leagueId?: string;

@@ -12,7 +12,6 @@ import { GroupsModule } from './modules/groups/groups.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SportsClientModule } from './modules/sports-client/sports-client.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

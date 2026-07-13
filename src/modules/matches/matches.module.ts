@@ -6,7 +6,6 @@ import { MatchEntity } from './entities/match.entity';
 import { IngestionService } from './services/ingestion.service';
 import { MatchesCronService } from './services/matches-cron.service';
 import { SportsClientModule } from '../sports-client/sports-client.module';
-
 @Module({
   imports: [TypeOrmModule.forFeature([MatchEntity]), SportsClientModule],
   controllers: [MatchesController],

@@ -4,7 +4,6 @@ import { GroupsService } from './groups.service';
 import { GroupsController } from './groups.controller';
 import { GroupEntity } from './entities/group.entity';
 import { GroupParticipantEntity } from './entities/group-participant.entity';
-
 @Module({
   imports: [TypeOrmModule.forFeature([GroupEntity, GroupParticipantEntity])],
   controllers: [GroupsController],

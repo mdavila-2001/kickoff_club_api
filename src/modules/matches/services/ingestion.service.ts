@@ -6,42 +6,33 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Between, DataSource, EntityManager } from 'typeorm';
-
 import { ISportsProvider } from '../../sports-client/interfaces/sports-provider.interface';
 import { ExternalMatchDto } from '../../sports-client/dto/external-match.dto';
 import { MatchEntity } from '../entities/match.entity';
 import { MatchStatus } from '../enums/match-status.enum';
-
 @Injectable()
 export class IngestionService {
   private readonly logger = new Logger(IngestionService.name);
-
   constructor(
     @Inject('SPORTS_PROVIDER_TOKEN')
     private readonly sportsProvider: ISportsProvider,
     private readonly dataSource: DataSource,
   ) {}
-
   public async syncMatches(): Promise<{
     synchronized: number;
     status: string;
   }> {
     const externalMatches = await this.fetchExternalMatches();
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       let synchronizedCount = 0;
-
       for (const matchDto of externalMatches) {
         await this.enterpriseUpsert(queryRunner.manager, matchDto);
         synchronizedCount++;
       }
-
       await queryRunner.commitTransaction();
-
       return {
         synchronized: synchronizedCount,
         status: 'success',
@@ -59,11 +50,6 @@ export class IngestionService {
       await queryRunner.release();
     }
   }
-
-  /**
-   * Obtiene y sincroniza de forma transaccional e idempotente todos los partidos
-   * de una liga y temporada específica.
-   */
   public async syncMatchesBySeason(
     leagueId: string,
     season: string,
@@ -92,7 +78,6 @@ export class IngestionService {
             apiSeason,
           );
           externalMatches.push(...roundMatches);
-          // Esperar 1 segundo entre rondas para evitar rate limit (HTTP 429)
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       } else {
@@ -110,21 +95,16 @@ export class IngestionService {
         'Error al comunicarse con el proveedor externo de deportes',
       );
     }
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       let synchronizedCount = 0;
-
       for (const matchDto of externalMatches) {
         await this.enterpriseUpsert(queryRunner.manager, matchDto);
         synchronizedCount++;
       }
-
       await queryRunner.commitTransaction();
-
       return {
         synchronized: synchronizedCount,
         status: 'success',
@@ -142,11 +122,6 @@ export class IngestionService {
       await queryRunner.release();
     }
   }
-
-  /**
-   * Obtiene y sincroniza de forma transaccional e idempotente todos los partidos
-   * de un día específico.
-   */
   public async syncMatchesByDay(
     date: string,
     leagueId?: string,
@@ -172,21 +147,16 @@ export class IngestionService {
         'Error al comunicarse con el proveedor externo de deportes',
       );
     }
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
       let synchronizedCount = 0;
-
       for (const matchDto of externalMatches) {
         await this.enterpriseUpsert(queryRunner.manager, matchDto);
         synchronizedCount++;
       }
-
       await queryRunner.commitTransaction();
-
       return {
         synchronized: synchronizedCount,
         status: 'success',
@@ -204,29 +174,20 @@ export class IngestionService {
       await queryRunner.release();
     }
   }
-
-  /**
-   * Maneja la bifurcación idempotente (INSERT/UPDATE) basada en externalApiId
-   * utilizando el EntityManager de la transacción activa.
-   */
   private async enterpriseUpsert(
     manager: EntityManager,
     matchDto: ExternalMatchDto,
   ): Promise<void> {
     const matchRepository = manager.getRepository(MatchEntity);
-
     let existing = await matchRepository.findOne({
       where: { externalApiId: matchDto.externalApiId },
     });
-
     if (!existing && matchDto.externalApiId) {
-      // Intentamos emparejar por coincidencia de equipos y fecha para partidos manuales
       const matchDate = new Date(matchDto.dateTime);
       const startOfDay = new Date(matchDate);
       startOfDay.setUTCHours(0, 0, 0, 0);
       const endOfDay = new Date(matchDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
-
       existing = await matchRepository.findOne({
         where: {
           homeTeam: matchDto.homeTeam,
@@ -234,7 +195,6 @@ export class IngestionService {
           dateTime: Between(startOfDay, endOfDay),
         },
       });
-
       if (existing) {
         existing.externalApiId = matchDto.externalApiId;
         this.logger.log(
@@ -242,12 +202,9 @@ export class IngestionService {
         );
       }
     }
-
     const status = this.calculateMatchStatus(matchDto.dateTime);
-
     if (existing) {
       let needsSave = false;
-
       if (existing.phase !== matchDto.phase) {
         existing.phase = matchDto.phase;
         needsSave = true;
@@ -284,7 +241,6 @@ export class IngestionService {
         existing.stadiumImage = matchDto.stadiumImage;
         needsSave = true;
       }
-
       if (existing.status === MatchStatus.FINISHED) {
         if (needsSave) {
           await matchRepository.save(existing);
@@ -294,7 +250,6 @@ export class IngestionService {
         );
         return;
       }
-
       existing.homeScore = matchDto.homeScore;
       existing.awayScore = matchDto.awayScore;
       existing.status = status;
@@ -319,14 +274,9 @@ export class IngestionService {
       await matchRepository.save(newMatch);
     }
   }
-
-  /**
-   * Infiere el estado del partido basándose en la diferencia de minutos con el tiempo actual.
-   */
   private calculateMatchStatus(matchDateTime: Date): MatchStatus {
     const now = new Date();
     const diffMinutes = (now.getTime() - matchDateTime.getTime()) / (1000 * 60);
-
     if (diffMinutes >= 120) {
       return MatchStatus.FINISHED;
     } else if (diffMinutes >= 0 && diffMinutes < 120) {
@@ -334,10 +284,6 @@ export class IngestionService {
     }
     return MatchStatus.PENDING;
   }
-
-  /**
-   * Encapsula la obtención de partidos y maneja de forma segura las excepciones de la API externa.
-   */
   private async fetchExternalMatches(): Promise<ExternalMatchDto[]> {
     try {
       return await this.sportsProvider.fetchLiveMatches();
