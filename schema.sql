@@ -157,8 +157,20 @@ BEGIN
     END IF;
 
     -- Si la hora actual es mayor o igual a la hora del partido, se bloquea la transacción
-    IF NOW() >= v_match_time THEN
-        RAISE EXCEPTION 'Restricción de Seguridad: No se permiten inserciones o modificaciones después de iniciado el partido.' USING ERRCODE = '45000';
+    -- pero solo si se intenta crear un pronóstico o si se intentan modificar los marcadores pronosticados.
+    IF TG_OP = 'INSERT' THEN
+        IF NOW() >= v_match_time THEN
+            RAISE EXCEPTION 'Restricción de Seguridad: No se permiten inserciones o modificaciones después de iniciado el partido.' USING ERRCODE = '45000';
+        END IF;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF NOW() >= v_match_time AND (
+            NEW.predicted_home IS DISTINCT FROM OLD.predicted_home OR
+            NEW.predicted_away IS DISTINCT FROM OLD.predicted_away OR
+            NEW.user_id IS DISTINCT FROM OLD.user_id OR
+            NEW.match_id IS DISTINCT FROM OLD.match_id
+        ) THEN
+            RAISE EXCEPTION 'Restricción de Seguridad: No se permiten inserciones o modificaciones después de iniciado el partido.' USING ERRCODE = '45000';
+        END IF;
     END IF;
 
     RETURN NEW;

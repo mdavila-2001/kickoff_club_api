@@ -1,9 +1,4 @@
 import { UserRole } from '../enums/user-role.enum';
-
-/**
- * Datos mínimos para persistir un usuario. La contraseña llega YA
- * hasheada: este contrato jamás transporta texto plano.
- */
 export interface CreateUserData {
   username: string;
   email: string;

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -10,7 +9,6 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
       useFactory: (config: ConfigService): TypeOrmModuleOptions => {
         const useSsl = config.get<string>('DB_SSL') === 'true';
         const ssl = useSsl ? { rejectUnauthorized: false } : false;
-
         return {
           type: 'postgres',
           host: config.getOrThrow<string>('DB_HOST'),
